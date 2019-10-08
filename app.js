@@ -1,17 +1,25 @@
 'use strict';
 
-const fs = require('fs');
+const events = require('./src/events/file-events');
 
-const alterFile = (file) => {
-  fs.readFile( file, (err, data) => {
-    if(err) { throw err; }
-    let text = data.toString().toUpperCase();
-    fs.writeFile( file, Buffer.from(text), (err, data) => {
-      if(err) { throw err; }
-      console.log(`${file} saved`);
-    });
-  });
-};
+const {uppercaseFile} = require('./src/edit-file');
+const eventClient = require('./src/event-client');
 
-let file = process.argv.slice(2).shift();
-alterFile(file);
+events.on('read', (file) => {
+  eventClient.write(`read: ${file}`);
+});
+
+events.on('write', (file) => {
+  console.log(file);
+  eventClient.write(`write: ${file}`);
+});
+
+events.on('error', (error) => {
+  eventClient.write(`error: ${error}`);
+});
+
+if (process.argv.length > 2) {
+  uppercaseFile(process.argv.slice(2).shift());
+}
+
+eventClient.unref();
